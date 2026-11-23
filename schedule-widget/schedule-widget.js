@@ -137,7 +137,7 @@ function buildWidget(status, family) {
     t.minimumScaleFactor = 0.6;
   };
   if (inline) {
-    add(`${d.title} · ${d.subtitle}`, 12, false);
+    add([d.title, d.subtitle].filter(Boolean).join(" · "), 12, false);
   } else if (accessory) {
     add(d.title, 14, true);
     add(d.subtitle, 12, false);
@@ -161,8 +161,8 @@ if (typeof Script !== "undefined") {
   const widget = buildWidget(getStatus(SCHEDULE, new Date()), config.widgetFamily);
   if (config.runsInWidget) {
     Script.setWidget(widget);
+    Script.complete();
   } else {
-    widget.presentSmall();
+    widget.presentSmall().then(() => Script.complete());
   }
-  Script.complete();
 }
