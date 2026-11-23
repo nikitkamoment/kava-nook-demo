@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { getStatus, formatMinutes, dayName } = require("./schedule-widget.js");
+const { getStatus, formatMinutes, dayName, describe } = require("./schedule-widget.js");
 
 // 2026-11-23 is a Monday.
 const at = (h, m) => new Date(2026, 10, 23, h, m);
@@ -92,4 +92,40 @@ test("formatMinutes", () => {
 test("dayName", () => {
   assert.equal(dayName(1), "Пн");
   assert.equal(dayName(0), "Вс");
+});
+
+test("describe: lesson", () => {
+  const d = describe(getStatus(week, at(8, 40)));
+  assert.equal(d.title, "Матем");
+  assert.equal(d.subtitle, "каб. 204 · ещё 35 мин");
+  assert.equal(d.footer, "Дальше: Русский, 09:25");
+});
+
+test("describe: break", () => {
+  const d = describe(getStatus(week, at(9, 15)));
+  assert.equal(d.title, "Перемена");
+  assert.equal(d.subtitle, "ещё 10 мин");
+  assert.equal(d.footer, "Дальше: Русский, каб. 101");
+});
+
+test("describe: before the first lesson", () => {
+  const d = describe(getStatus(week, at(8, 0)));
+  assert.equal(d.title, "Уроки с 08:30");
+  assert.equal(d.subtitle, "Матем, каб. 204");
+});
+
+test("describe: after lessons points to the next day", () => {
+  const d = describe(getStatus(week, at(11, 0)));
+  assert.equal(d.title, "Уроков больше нет");
+  assert.equal(d.subtitle, "Вт: 09:00");
+  assert.equal(d.footer, "Литер");
+});
+
+test("describe: no lessons at all", () => {
+  assert.equal(describe(getStatus({}, at(12, 0))).title, "Уроков нет");
+});
+
+test("describe: last lesson of the day has no next lesson", () => {
+  const d = describe(getStatus(week, at(10, 30)));
+  assert.equal(d.footer, "Дальше: уроков сегодня нет");
 });
