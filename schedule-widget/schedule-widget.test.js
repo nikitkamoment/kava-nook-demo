@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { getStatus, formatMinutes, dayName, describe } = require("./schedule-widget.js");
+const { getStatus, formatMinutes, dayName, view } = require("./schedule-widget.js");
 
 // 2026-11-23 is a Monday.
 const at = (h, m) => new Date(2026, 10, 23, h, m);
@@ -94,38 +94,55 @@ test("dayName", () => {
   assert.equal(dayName(0), "Вс");
 });
 
-test("describe: lesson", () => {
-  const d = describe(getStatus(week, at(8, 40)));
-  assert.equal(d.title, "Матем");
-  assert.equal(d.subtitle, "каб. 204 · ещё 35 мин");
-  assert.equal(d.footer, "Дальше: Русский, 09:25");
+test("view: during a lesson shows it with progress and what comes next", () => {
+  const v = view(week, at(8, 40));
+  assert.equal(v.label, "СЕЙЧАС");
+  assert.equal(v.hint, "ещё 35 мин");
+  assert.equal(v.main.subject, "Матем");
+  assert.equal(v.progress, 10 / 45);
+  assert.equal(v.next.subject, "Русский");
+  assert.equal(v.list.length, 3);
+  assert.equal(v.activeIndex, 0);
 });
 
-test("describe: break", () => {
-  const d = describe(getStatus(week, at(9, 15)));
-  assert.equal(d.title, "Перемена");
-  assert.equal(d.subtitle, "ещё 10 мин");
-  assert.equal(d.footer, "Дальше: Русский, каб. 101");
+test("view: on a break the upcoming lesson is the main one", () => {
+  const v = view(week, at(9, 15));
+  assert.equal(v.label, "ПЕРЕМЕНА");
+  assert.equal(v.hint, "ещё 10 мин");
+  assert.equal(v.main.subject, "Русский");
+  assert.equal(v.progress, null);
+  assert.equal(v.next.subject, "Физика");
+  assert.equal(v.activeIndex, 1);
 });
 
-test("describe: before the first lesson", () => {
-  const d = describe(getStatus(week, at(8, 0)));
-  assert.equal(d.title, "Уроки с 08:30");
-  assert.equal(d.subtitle, "Матем, каб. 204");
+test("view: before lessons", () => {
+  const v = view(week, at(8, 0));
+  assert.equal(v.label, "СЕГОДНЯ");
+  assert.equal(v.hint, "через 30 мин");
+  assert.equal(v.main.subject, "Матем");
 });
 
-test("describe: after lessons points to the next day", () => {
-  const d = describe(getStatus(week, at(11, 0)));
-  assert.equal(d.title, "Уроков больше нет");
-  assert.equal(d.subtitle, "Вт: 09:00");
-  assert.equal(d.footer, "Литер");
+test("view: after lessons shows tomorrow's day", () => {
+  const v = view(week, at(11, 0));
+  assert.equal(v.label, "ЗАВТРА");
+  assert.equal(v.main.subject, "Литер");
+  assert.equal(v.list.length, 1);
+  assert.equal(v.next, null);
 });
 
-test("describe: no lessons at all", () => {
-  assert.equal(describe(getStatus({}, at(12, 0))).title, "Уроков нет");
+test("view: on Saturday names the day instead of 'tomorrow'", () => {
+  const v = view(week, new Date(2026, 10, 28, 12, 0));
+  assert.equal(v.label, "ПОНЕДЕЛЬНИК");
+  assert.equal(v.main.subject, "Матем");
 });
 
-test("describe: last lesson of the day has no next lesson", () => {
-  const d = describe(getStatus(week, at(10, 30)));
-  assert.equal(d.footer, "Дальше: уроков сегодня нет");
+test("view: last lesson of the day has no next", () => {
+  assert.equal(view(week, at(10, 30)).next, null);
+});
+
+test("view: empty schedule", () => {
+  const v = view({}, at(12, 0));
+  assert.equal(v.label, "УРОКОВ НЕТ");
+  assert.equal(v.main, null);
+  assert.deepEqual(v.list, []);
 });

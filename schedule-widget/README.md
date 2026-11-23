@@ -19,7 +19,7 @@
 
 ```js
 1: [
-  { subject: "Matematika", room: "303", start: "09:00", end: "09:45" },
+  { subject: "Математика", room: "303", start: "09:00", end: "09:45" },
 ],
 ```
 
