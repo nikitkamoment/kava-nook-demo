@@ -40,9 +40,29 @@ function getStatus(schedule, now) {
       nextDay: null,
     };
   }
+  for (let i = 1; i <= 7; i++) {
+    const day = (now.getDay() + i) % 7;
+    const upcoming = sortedLessons(schedule, day);
+    if (upcoming.length > 0) {
+      return { state: "after", current: null, next: upcoming[0], minutesLeft: null, nextDay: day };
+    }
+  }
   return { state: "after", current: null, next: null, minutesLeft: null, nextDay: null };
 }
 
+function formatMinutes(n) {
+  const h = Math.floor(n / 60);
+  const m = n % 60;
+  if (h === 0) return `${m} мин`;
+  if (m === 0) return `${h} ч`;
+  return `${h} ч ${m} мин`;
+}
+
+const DAY_NAMES = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+function dayName(weekday) {
+  return DAY_NAMES[weekday];
+}
+
 if (typeof module !== "undefined") {
-  module.exports = { getStatus };
+  module.exports = { getStatus, formatMinutes, dayName };
 }
